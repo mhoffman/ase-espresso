@@ -1462,16 +1462,27 @@ def read_log(log_filename):
 
     """
     calc = calculator()
-    p = os.popen('grep -n Giannozzi {log_filename} 2>/dev/null | tail -1'.format(**locals()), 'r')
 
+    p = os.popen('grep -n Giannozzi {log_filename} 2>/dev/null | tail -1'.format(**locals()), 'r')
     try:
         lline = p.readline()
-        print(r'{log_filename} preadline {lline}'.format(**locals()))
+        #print(r'{log_filename} preadline {lline}'.format(**locals()))
         n = int(lline.split()[0].strip(':'))
     except:
         print >>sys.stderr, 'No valid pw-log at {log_filename} found.'.format(**locals())
         p.close()
         return
+    p.close()
+
+    p = os.popen('grep -n "JOB DONE." {log_filename} 2>/dev/null | tail -1'.format(**locals()), 'r')
+    try:
+        lline = p.readline()
+        #print(r'{log_filename} preadline {lline}'.format(**locals()))
+        n_end = int(lline.split()[0].strip(':'))
+    except Exception as e:
+        print >>sys.stderr, 'Logfile {log_filename} does not seem finished: {e} ({lline}).'.format(**locals())
+        p.close()
+        #return
     p.close()
 
     s = open(log_filename, 'r')
@@ -1481,8 +1492,11 @@ def read_log(log_filename):
         s.readline()
 
     a = s.readline()
-    while a[:11] != '     celldm':
+    while a[:11] != '     celldm' and a :
         a = s.readline()
+    if not a:
+        print("Warning: cell dimension not found in last calculation in {log_filename}. Make sure it is complete.".format(**locals()))
+        return
     alat = float(a.split()[1]) / 1.889726
     a = s.readline()
     while a[:12] != '     crystal':

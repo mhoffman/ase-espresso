@@ -103,7 +103,6 @@ class espresso(Calculator):
                  startingwfc = None,
                  ion_positions = None,
                  parflags = None,
-                 trust_radius_min = None,
                  onlycreatepwinp = None, #specify filename to only create pw input
                  single_calculator = True, #if True, only one espresso job will be running
                  procrange = None, #let this espresso calculator run only on a subset of the requested cpus
@@ -475,7 +474,6 @@ svn co --username anonymous http://qeforge.qe-forge.org/svn/q-e/branches/espress
         self.started = False
         self.got_energy = False
         self.only_init = False
-        self.trust_radius_min = trust_radius_min
 
         #automatically generated list
         self.iprint = iprint
@@ -1380,13 +1378,23 @@ svn co --username anonymous http://qeforge.qe-forge.org/svn/q-e/branches/espress
             if np.max(x)>1E-13 or np.min(x)<-1E-13:
                 self.stop()
                 self.recalculate = True
-            if (atoms.get_atomic_numbers()!=self.atoms.get_atomic_numbers()).any():
+            try:
+                if any(atoms.get_atomic_numbers() != self.atoms.get_atomic_numbers()):
+                    self.stop()
+                    self.nvalence = None
+                    self.nel = None
+                    self.recalculate = True
+            except:
                 self.stop()
                 self.nvalence = None
                 self.nel = None
                 self.recalculate = True
-            x = atoms.positions-self.atoms.positions
-            if np.max(x)>1E-13 or np.min(x)<-1E-13 or (not self.started and not self.got_energy):
+
+            if atoms.positions.shape == self.atoms.positions.shape :
+                x = atoms.positions-self.atoms.positions
+                if np.max(x)>1E-13 or np.min(x)<-1E-13 or (not self.started and not self.got_energy):
+                    self.recalculate = True
+            else:
                 self.recalculate = True
         self.atoms = atoms.copy()
 
@@ -1394,8 +1402,12 @@ svn co --username anonymous http://qeforge.qe-forge.org/svn/q-e/branches/espress
         if self.atoms is None:
             self.set_atoms(atoms)
         x = atoms.cell-self.atoms.cell
-        morethanposchange = np.max(x)>1E-13 or np.min(x)<-1E-13 or len(atoms)!=len(self.atoms) \
-            or (atoms.get_atomic_numbers()!=self.atoms.get_atomic_numbers()).any()
+        try:
+            morethanposchange = np.max(x)>1E-13 or np.min(x)<-1E-13 or len(atoms)!=len(self.atoms) \
+                or (atoms.get_atomic_numbers()!=self.atoms.get_atomic_numbers()).any()
+        except ValueError:
+            morethanposchange = True
+
         x = atoms.positions-self.atoms.positions
         if np.max(x)>1E-13 or np.min(x)<-1E-13 or morethanposchange \
             or (not self.started and not self.got_energy) or self.recalculate:

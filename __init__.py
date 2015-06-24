@@ -1409,8 +1409,8 @@ svn co --username anonymous http://qeforge.qe-forge.org/svn/q-e/branches/espress
             morethanposchange = True
 
         x = atoms.positions-self.atoms.positions
-        if np.max(x)>1E-13 or np.min(x)<-1E-13 or morethanposchange \
-            or (not self.started and not self.got_energy) or self.recalculate:
+        #if np.max(x)>1E-13 or np.min(x)<-1E-13 or morethanposchange \
+        if True or (not self.started and not self.got_energy) or self.recalculate:
             self.recalculate = True
             if self.opt_algorithm!='ase3' or self.calcmode in ('scf','nscf') or \
                 morethanposchange:
